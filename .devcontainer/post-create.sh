@@ -42,6 +42,10 @@ echo "🔧 Installing TypeScript globally..."
 sudo npm install -g typescript@5.9.3
 echo "✅ TypeScript installed globally"
 
+echo "🔧 Installing Claude code globally..."
+sudo npm install -g @anthropic-ai/claude-code
+echo "✅ Claude-code installed globally"
+
 # Download Ollama model automatically
 echo "🤖 Downloading Ollama model (gemma3:4b)..."
 echo "   This may take 5-15 minutes on first setup..."
