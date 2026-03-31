@@ -1,53 +1,105 @@
 # AI Transcript App
 
-A base for your portfolio piece to land your next AI engineering job.
 AI-powered voice transcription with Whisper and LLM cleaning. Browser-based recording interface with FastAPI backend.
 
-**📺 Recommended Video Tutorial:** For project structure and API details, watch the full tutorial on YouTube: https://youtu.be/WUo5tKg2lnE
-
 ---
 
-## Branches
+## What Is This?
 
-This repository uses checkpoint branches to progressively teach AI engineering concepts:
+The AI Transcript App is a full-stack tool that records your voice, transcribes it locally using Whisper, and cleans the resulting text with an LLM — removing filler words, fixing grammar, and preserving meaning.
 
-| Branch | Description | Builds On | Learning Resource |
-|--------|-------------|-----------|-------------------|
-| `main` | Complete transcript app with Whisper + LLM cleaning (runs fully locally, beginner friendly) | — | [YouTube Tutorial](https://youtu.be/WUo5tKg2lnE) |
-| `checkpoint-1-fundamentals` | Exercise generation system for learning Python/TypeScript fundamentals | — | [Classroom](https://aiengineer.community/join) |
-| `checkpoint-agentic-openrouter` | Agentic workflow with autonomous tool selection | `main` | [Classroom](https://aiengineer.community/join) |
-| `checkpoint-pydanticai-openrouter` | PydanticAI framework for structured agent development | `checkpoint-agentic-openrouter` | [Classroom](https://aiengineer.community/join) |
-| `checkpoint-rest-mcp-openrouter` | MCP integration with REST API and GitHub Issues | `checkpoint-pydanticai-openrouter` | [Classroom](https://aiengineer.community/join) |
-
-> **Why "openrouter" in branch names?** These branches use [OpenRouter](https://openrouter.ai/) to access powerful cloud models that reliably support tool/function calling. Small local models struggle with agentic workflows.
-
-Switch branches with: `git checkout <branch-name>`
-
----
+It's designed to run entirely on your machine with no cloud dependency, though it supports any OpenAI-compatible cloud API as a drop-in replacement.
 
 **Features:**
 
-- 🎤 Browser-based voice recording
-- 🔊 English Whisper speech-to-text (runs locally)
-- 🤖 LLM cleaning (removes filler words, fixes errors)
-- 🔌 **OpenAI API-compatible** (works with Ollama, LM Studio, OpenAI, or any OpenAI-compatible API)
+- 🎤 Browser-based voice recording (hold `V` to record)
+- 📁 Audio file upload via drag-and-drop
+- 🔊 Whisper speech-to-text (runs locally via `faster-whisper`)
+- 🤖 LLM-powered transcript cleaning (removes filler words, fixes errors)
+- ✏️ Manual text input — paste any text for LLM cleaning
+- ⚙️ Customizable LLM system prompt
 - 📋 One-click copy to clipboard
+- 🔌 OpenAI API-compatible — works with Ollama, LM Studio, OpenAI, or any compatible provider
 
-Note that the vanilla version uses a smaller language model running on your CPU.
-This means the AI may not listen to system prompts that well depending on the transcript.
-The challenge for you is to change this portfolio app to advance the solution and make it your own.
+---
 
-For example:
+## LLM APIs
 
-- Modify it for a specific industry
-- Add GPU acceleration + stronger local LLM
-- Use a cloud AI model
-- Real-time transcription/LLM streaming
-- Multi-language support beyond English
+This app uses two AI models in sequence:
 
-**📚 Need help and want to learn more?**
+### 1. Whisper (Speech-to-Text)
 
-Full courses on AI Engineering are available at [https://aiengineer.community/join](https://aiengineer.community/join)
+- **Library:** [`faster-whisper`](https://github.com/SYSTRAN/faster-whisper) — an optimized CTranslate2 port of OpenAI Whisper
+- **Model:** `base.en` (English-only, ~150MB, runs on CPU)
+- **Runs:** Locally, no API key required
+- **Used for:** Converting recorded audio → raw transcript text
+
+### 2. LLM (Text Cleaning)
+
+- **Library:** [`openai`](https://github.com/openai/openai-python) Python SDK (OpenAI-compatible interface)
+- **Default model:** `gemma3:4b` via [Ollama](https://ollama.com/) (local, CPU-based)
+- **Used for:** Cleaning raw transcript — removes filler words (um, uh, like), fixes grammar, reduces redundancy
+- **Configurable:** Swap in any OpenAI-compatible provider via `backend/.env`
+
+| Provider | Base URL | Notes |
+|----------|----------|-------|
+| **Ollama** (default) | `http://ollama:11434/v1` | Runs locally in devcontainer |
+| **LM Studio** | `http://localhost:1234/v1` | Local alternative |
+| **OpenAI** | `https://api.openai.com/v1` | Cloud, best quality |
+| Any OpenAI-compatible | custom | Set `LLM_BASE_URL` in `.env` |
+
+---
+
+## Architecture
+
+```mermaid
+graph TD
+    A[Browser] -->|Hold V / Upload file| B[Frontend\nReact 19 + TypeScript\nPort 3000]
+    B -->|POST /api/transcribe\naudio blob| C[Backend\nFastAPI + Python 3.12\nPort 8000]
+    C -->|faster-whisper\nbase.en model| D[Whisper\nLocal Speech-to-Text]
+    D -->|raw transcript| C
+    C -->|raw text| B
+    B -->|POST /api/clean\nraw text + system prompt| C
+    C -->|OpenAI-compatible\nchat completions API| E[LLM Service\nOllama / LM Studio / OpenAI]
+    E -->|cleaned text| C
+    C -->|cleaned transcript| B
+    B -->|Display both versions| A
+```
+
+**Data flow:**
+1. User records audio in the browser (WebM blob)
+2. Frontend POSTs audio to `/api/transcribe` → Whisper returns raw text
+3. If LLM is enabled, frontend POSTs raw text to `/api/clean` → LLM returns cleaned text
+4. Both raw and cleaned transcripts are shown side-by-side
+
+**Stack:**
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, TypeScript, Vite |
+| Backend | FastAPI, Python 3.12, uv |
+| Speech-to-Text | faster-whisper (local) |
+| LLM | OpenAI Python SDK → Ollama (default) |
+| Containerization | Docker Compose |
+
+---
+
+## Screenshots
+
+### Recording Interface
+
+<!-- Add screenshot: frontend recording view (e.g. docs/screenshots/recording.png) -->
+![Recording Interface](docs/screenshots/recording.png)
+
+### Transcript Results
+
+<!-- Add screenshot: raw + cleaned transcript side-by-side (e.g. docs/screenshots/results.png) -->
+![Transcript Results](docs/screenshots/results.png)
+
+### Settings Panel
+
+<!-- Add screenshot: LLM toggle + system prompt editor (e.g. docs/screenshots/settings.png) -->
+![Settings Panel](docs/screenshots/settings.png)
 
 ---
 
@@ -108,23 +160,17 @@ If you need true `localhost` access (some code expects `localhost:8000`):
 
 > **💡 Tip:** Stop your Codespace when not in use to conserve free hours. Go to [github.com/codespaces](https://github.com/codespaces) to manage active instances.
 
-> **📺 Video Guide:** Watch the [GitHub Codespaces setup tutorial](https://youtu.be/KkV1O-rXntM) for a walkthrough.
-
-> **🔄 Other Platforms:** Any cloud platform supporting devcontainers (Gitpod, DevPod, etc.) can also be used with this repository's `.devcontainer` configuration.
-
 ---
 
 ### 🛠️ Manual Installation
 
-The devcontainer is the easiest supported setup method for beginners.
+The devcontainer is the easiest supported setup method.
 If you choose to install manually, you'll need:
 
 - Python 3.12+, Node.js 24+, [uv](https://docs.astral.sh/uv/), and an LLM server ([Ollama](https://ollama.com/) or [LM Studio](https://lmstudio.ai/))
 - Copy `backend/.env.example` to `backend/.env` and configure
 - Install dependencies with `uv sync` (backend) and `npm install` (frontend)
-- Start your LLM server and pull models: `ollama pull llama3.1:8b`
-
-**For detailed setup, use the devcontainer above.**
+- Start your LLM server and pull models: `ollama pull gemma3:4b`
 
 ---
 
@@ -139,8 +185,6 @@ cd backend
 uv sync && uv run uvicorn app:app --reload --host 0.0.0.0 --port 8000 --timeout-keep-alive 600
 ```
 
-> **Note:** `uv sync` ensures dependencies are up-to-date (useful after switching branches).`--timeout-keep-alive 600` sets a 10-minute timeout for long audio processing.
-
 **Terminal 2 - Frontend:**
 
 ```bash
@@ -148,30 +192,21 @@ cd frontend
 npm install && npm run dev
 ```
 
-> **Note:** `npm install` ensures dependencies are up-to-date (useful after switching branches).
-
 **Browser:** Open `http://localhost:3000`
 
 ---
 
 ## Configuration
 
-### OpenAI API Compatibility
+Edit `backend/.env` to switch LLM providers:
 
-**This app is compatible with any OpenAI API-format LLM provider:**
+```env
+LLM_BASE_URL=http://ollama:11434/v1   # API endpoint
+LLM_API_KEY=ollama                    # API key (use "ollama" for local)
+LLM_MODEL=gemma3:4b                   # Model name
+```
 
-- **Ollama** (default - works out of the box in devcontainer)
-- **LM Studio** (local alternative)
-- **OpenAI API** (cloud-based)
-- Any other OpenAI-compatible API
-
-The devcontainer automatically creates `backend/.env` with working Ollama defaults. **No configuration needed to get started.**
-
-To use a different provider, edit `backend/.env`:
-
-- `LLM_BASE_URL` - API endpoint
-- `LLM_API_KEY` - API key
-- `LLM_MODEL` - Model name
+The app is compatible with any OpenAI API-format provider — change these three values to point at OpenAI, LM Studio, or any other compatible endpoint.
 
 ---
 
@@ -179,7 +214,7 @@ To use a different provider, edit `backend/.env`:
 
 **Container won't start or is very slow:**
 
-⚠️ **This app runs an LLM on CPU and requires adequate Docker resources.**
+⚠️ This app runs an LLM on CPU and requires adequate Docker resources.
 
 Configure Docker Desktop resources:
 
@@ -187,8 +222,6 @@ Configure Docker Desktop resources:
 2. Set **CPUs** to maximum available (8+ cores recommended)
 3. Set **Memory** to at least 16GB
 4. Click **Apply & Restart**
-
-**Expected specs:** Modern laptop/desktop with 8+ CPU cores and 16GB RAM. More CPU = faster LLM responses.
 
 **Microphone not working:**
 
@@ -203,23 +236,14 @@ Configure Docker Desktop resources:
 **LLM errors:**
 
 - Make sure Ollama service is running (it auto-starts with devcontainer)
-- Check model is downloaded: Model downloads automatically during devcontainer setup
-- Transcription still works without LLM (raw Whisper only)
+- Transcription still works without LLM (raw Whisper output is shown)
 
 **LLM is slow:**
 
-- See "Container won't start or is very slow" section above for Docker resource configuration
-- **Fallback option:** Switch to another model (edit `LLM_MODEL` in `backend/.env`)
-  - ⚠️ **Trade-off:** 3b is faster but **significantly worse at cleaning transcripts**
-- **Best alternative:** Use a cloud API like OpenAI for instant responses with excellent quality (edit `.env`)
+- See Docker resource configuration above
+- Alternatively, switch to a cloud API (edit `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` in `.env`)
 
-**Cannot access localhost:3000 or localhost:8000 from host machine:**
+**Cannot access localhost:3000 or localhost:8000:**
 
-- **Docker Desktop:** Go to **Settings** → **Resources** → **Network**
-- Enable **"Use host networking"** (may require Docker Desktop restart)
-- Restart the frontend and backend servers
-
-**Port already in use:**
-
-- Backend: Change port with `--port 8001`
-- Frontend: Edit `vite.config.js`, change `port: 3000`
+- Go to Docker Desktop → **Settings** → **Resources** → **Network**
+- Enable **"Use host networking"** and restart Docker Desktop
