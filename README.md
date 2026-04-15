@@ -180,9 +180,26 @@ Open **two terminals** and run:
 
 **Terminal 1 - Backend:**
 
+If you have `uv` installed:
 ```bash
 cd backend
 uv sync && uv run uvicorn app:app --reload --host 0.0.0.0 --port 8000 --timeout-keep-alive 600
+```
+
+If running locally without `uv` (first time only — sets up the venv):
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install faster-whisper fastapi "uvicorn[standard]" python-multipart openai python-dotenv
+uvicorn app:app --reload --host 0.0.0.0 --port 8000 --timeout-keep-alive 600
+```
+
+On subsequent runs (venv already exists):
+```bash
+cd backend
+source .venv/bin/activate
+uvicorn app:app --reload --host 0.0.0.0 --port 8000 --timeout-keep-alive 600
 ```
 
 **Terminal 2 - Frontend:**
@@ -232,6 +249,32 @@ Configure Docker Desktop resources:
 
 - Check Whisper model downloads: `~/.cache/huggingface/`
 - Ensure enough disk space (models are ~150MB)
+
+**`uv` command not found (running locally outside devcontainer):**
+
+`uv` is not installed. Use the local venv approach instead — see the backend setup steps above.
+
+**`uvicorn: command not found` after activating venv:**
+
+The venv is active but the shell's PATH hasn't picked up the binary. Run via Python directly:
+```bash
+python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000 --timeout-keep-alive 600
+```
+
+**`bad interpreter: /workspaces/... no such file or directory`:**
+
+The `.venv` was built inside a GitHub Codespace and has hardcoded paths that don't exist locally. Delete it and recreate:
+```bash
+rm -rf .venv
+python3 -m venv .venv
+source .venv/bin/activate
+pip install faster-whisper fastapi "uvicorn[standard]" python-multipart openai python-dotenv
+```
+
+**Port 8000 already in use:**
+```bash
+lsof -ti :8000 | xargs kill -9
+```
 
 **LLM errors:**
 
